@@ -18,5 +18,5 @@ type Post struct {
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
-	Tags        []*Tag         `gorm:"many2many:post_tags;" json:"tags"`
+	Tags        []*Tag         `gorm:"many2many:post_tags;" json:"tags"` // 该标签通过 gorm:"many2many:post_tags;" 指定了用 post_tags 中间表来建立 Post 与 Tag 的多对多关联，并在 JSON 序列化时将该字段命名为 tags。
 }
