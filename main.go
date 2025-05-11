@@ -1,5 +1,5 @@
 // @title GoBlog API文档
-// @version 1.0
+// @version 1.1
 // @description 展示接口功能
 // @host localhost:8080
 // @BasePath /api
@@ -8,6 +8,7 @@ package main
 import (
 	"goblog/config"
 	"goblog/database"
+	"goblog/pkg/cache"
 	"goblog/routes"
 
 	_ "goblog/docs"
@@ -21,6 +22,8 @@ func main() {
 	config.LoadConfig()
 
 	database.ConnectDatabase()
+
+	cache.InitRedis("localhost", "6379", "", 0)
 
 	r := gin.Default()
 
