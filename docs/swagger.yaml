@@ -78,7 +78,7 @@ info:
   contact: {}
   description: 展示接口功能
   title: GoBlog API文档
-  version: "1.0"
+  version: "1.1"
 paths:
   /comments:
     get:
