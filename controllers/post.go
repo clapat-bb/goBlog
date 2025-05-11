@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"goblog/database"
 	"goblog/models"
+	"goblog/pkg/cache"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -72,6 +74,11 @@ func CreatePost(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "文章创建成功", "post": post})
+
+	for i := 1; i <= 5; i++ {
+		cacheKey := fmt.Sprintf("posts:page:%d:limit:10", i)
+		cache.Rdb.Del(cache.Ctx, cacheKey)
+	}
 }
 
 // GetPosts godoc
@@ -85,20 +92,30 @@ func CreatePost(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /posts [get]
 func GetPosts(c *gin.Context) {
+	page := c.DefaultQuery("page", "1")
+	limit := c.DefaultQuery("limit", "10")
+	cacheKey := fmt.Sprintf("posts:page:%s:limit:%s", page, limit)
+
 	var posts []models.Post
 
-	pageStr := c.DefaultQuery("page", "1")
-	limitStr := c.DefaultQuery("limit", "10")
+	if hit, err := cache.GetJSON(cacheKey, &posts); hit && err == nil {
+		c.JSON(http.StatusOK, gin.H{"from": "cache", "posts": posts})
+		return
+	}
 
-	page, _ := strconv.Atoi(pageStr)
-	limit, _ := strconv.Atoi(limitStr)
-	offset := (page - 1) * limit
+	offset, _ := strconv.Atoi(page)
+	pageSize, _ := strconv.Atoi(limit)
+	offset = (offset - 1) * pageSize
+	// page, _ := strconv.Atoi(pageStr)
+	// limit, _ := strconv.Atoi(limitStr)
+	// offset := (page - 1) * limit
 
-	if err := database.DB.Preload("User").Preload("Tags").Order("created_at desc").Limit(limit).Offset(offset).Find(&posts).Error; err != nil {
+	if err := database.DB.Preload("User").Preload("Tags").Order("created_at desc").Limit(pageSize).Offset(offset).Find(&posts).Error; err != nil {
 		fmt.Println("查询出错:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "查询文章失败"})
 		return
 	}
+	cache.SetJSON(cacheKey, posts, 30*time.Second)
 	c.JSON(http.StatusOK, gin.H{"posts": posts})
 }
 
