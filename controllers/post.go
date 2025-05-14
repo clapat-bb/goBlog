@@ -183,7 +183,7 @@ func UpdataPost(c *gin.Context) {
 		return
 	}
 
-	updatdData := map[string]interface{}{}
+	updatdData := map[string]any{}
 	if input.Title != nil {
 		updatdData["title"] = *input.Title
 	}
